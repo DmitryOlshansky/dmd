@@ -88,7 +88,8 @@ Value* _aaGet(AA** paa, Key key)
     //printf("paa = %p, *paa = %p\n", paa, *paa);
 
     assert((*paa)->b_length);
-    size_t i = index(key) % (*paa)->b_length;
+    size_t i = (*paa)->b_length == 4 ? index(key) & 3 
+        : (size_t)key % (*paa)->b_length;
     aaA** pe = &(*paa)->b[i];
     aaA *e;
     while ((e = *pe) != NULL)
@@ -135,9 +136,9 @@ Value _aaGetRvalue(AA* aa, Key key)
         if (len == 4)
             i = index(key) & 3;
         else if (len == 31)
-            i = index(key) % 31;
+            i = (size_t)key % 31;
         else
-            i = index(key) % len;
+            i = (size_t)key % len;
         aaA* e = aa->b[i];
         while (e)
         {
@@ -191,7 +192,7 @@ void _aaRehash(AA** paa)
             {   aaA *e = aa->b[k];
                 while (e)
                 {   aaA* enext = e->next;
-                    size_t j = index(e->key) % len;
+                    size_t j = (size_t)e->key % len;
                     e->next = newb[j];
                     newb[j] = e;
                     e = enext;
