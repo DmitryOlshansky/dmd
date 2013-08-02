@@ -30,6 +30,13 @@ static const size_t prime_list[] = {
       1610612741UL,     4294967291UL,
 };
 
+static inline size_t index(void* a)
+{
+    size_t h = (size_t)a;
+    h ^= (h >> 20) ^ (h >> 12);
+    return h ^ (h >> 7) ^ (h >> 4);
+}
+
 struct aaA
 {
     aaA *next;
@@ -81,7 +88,7 @@ Value* _aaGet(AA** paa, Key key)
     //printf("paa = %p, *paa = %p\n", paa, *paa);
 
     assert((*paa)->b_length);
-    size_t i = (size_t)key % (*paa)->b_length;
+    size_t i = index(key) % (*paa)->b_length;
     aaA** pe = &(*paa)->b[i];
     aaA *e;
     while ((e = *pe) != NULL)
@@ -126,11 +133,11 @@ Value _aaGetRvalue(AA* aa, Key key)
         size_t i;
         size_t len = aa->b_length;
         if (len == 4)
-            i = (size_t)key & 3;
+            i = index(key) & 3;
         else if (len == 31)
-            i = (size_t)key % 31;
+            i = index(key) % 31;
         else
-            i = (size_t)key % len;
+            i = index(key) % len;
         aaA* e = aa->b[i];
         while (e)
         {
@@ -156,7 +163,21 @@ void _aaRehash(AA** paa)
         size_t len = _aaLen(aa);
         if (len)
         {   size_t i;
-
+#if 0
+            printf("Rehash of %d items in %d slots AA\n", aa->nodes, aa->b_length);
+            for(size_t i = 0; i < aa->b_length; i++)
+            {
+                aaA *e = aa->b[i];
+                size_t cnt=0;
+                while (e)
+                {
+                    e = e->next;
+                    cnt++;
+                }
+                printf("%d: %d\n", i, cnt);
+            }
+            printf("---\n");
+#endif
             for (i = 0; i < sizeof(prime_list)/sizeof(prime_list[0]) - 1; i++)
             {
                 if (len <= prime_list[i])
@@ -170,7 +191,7 @@ void _aaRehash(AA** paa)
             {   aaA *e = aa->b[k];
                 while (e)
                 {   aaA* enext = e->next;
-                    size_t j = (size_t)e->key % len;
+                    size_t j = index(e->key) % len;
                     e->next = newb[j];
                     newb[j] = e;
                     e = enext;
