@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #include "rmem.h"
 
@@ -24,9 +25,15 @@ char *Mem::strdup(const char *s)
 
     if (s)
     {
-        p = ::strdup(s);
+        size_t len = strlen(s);
+        p = (char*)malloc(len+1);        
         if (p)
-            return p;
+        {
+            memcpy(p+16, s, len);
+            p[16+len] = 0;
+            *(int*)p = 0xdeabeaf;            
+            return p+16;
+        }
         error();
     }
     return NULL;
@@ -39,9 +46,11 @@ void *Mem::malloc(size_t size)
         p = NULL;
     else
     {
-        p = ::malloc(size);
+        p = ::malloc(16+size);      
         if (!p)
             error();
+        *(int*)p = 0xdeadbeaf;
+        p = (char*)p + 16; 
     }
     return p;
 }
@@ -53,9 +62,10 @@ void *Mem::calloc(size_t size, size_t n)
         p = NULL;
     else
     {
-        p = ::calloc(size, n);
+        p = malloc(size * n);
         if (!p)
             error();
+        memset(p, 0, size * n);
     }
     return p;
 }
@@ -70,18 +80,19 @@ void *Mem::realloc(void *p, size_t size)
     }
     else if (!p)
     {
-        p = ::malloc(size);
+        p = malloc(size);
         if (!p)
             error();
     }
     else
     {
         void *psave = p;
-        p = ::realloc(psave, size);
+        p = ::realloc((char*)psave-16, size+16);
         if (!p)
         {   free(psave);
             error();
         }
+        p = (char*)p + 16;
     }
     return p;
 }
@@ -89,7 +100,10 @@ void *Mem::realloc(void *p, size_t size)
 void Mem::free(void *p)
 {
     if (p)
-        ::free(p);
+    {
+        assert(*(int*)((char*)p-16) == 0xdeadbeaf);
+        ::free((char*)p-16);
+    }
 }
 
 void *Mem::mallocdup(void *o, size_t size)
@@ -99,7 +113,7 @@ void *Mem::mallocdup(void *o, size_t size)
         p = NULL;
     else
     {
-        p = ::malloc(size);
+        p = malloc(size);
         if (!p)
             error();
         else
