@@ -405,9 +405,6 @@
     <ClCompile Include="tk\list.c">
       <Filter>src\tk</Filter>
     </ClCompile>
-    <ClCompile Include="tk\mem.c">
-      <Filter>src\tk</Filter>
-    </ClCompile>
     <ClCompile Include="tk\vec.c">
       <Filter>src\tk</Filter>
     </ClCompile>

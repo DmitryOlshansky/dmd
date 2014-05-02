@@ -29,10 +29,10 @@ char *Mem::strdup(const char *s)
         p = (char*)malloc(len+1);        
         if (p)
         {
-            memcpy(p+16, s, len);
-            p[16+len] = 0;
-            *(int*)p = 0xdeabeaf;            
-            return p+16;
+            memcpy(p, s, len);
+            p[len] = 0;
+            *(int*)((char*)p-16) = 0xdeabeaf;            
+            return p;
         }
         error();
     }
